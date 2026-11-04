@@ -1308,9 +1308,8 @@
     updateTopLabels();
     $('#tableForName').textContent = D.name;
     $('#tableSince').textContent = D.startDate.split('-').join('.');
-    const isLocal = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname);
     const editLink = $('#editLink');
-    if (editLink && isLocal) editLink.hidden = false;
+    if (editLink) editLink.hidden = false;
     setOpen(0, false);
     setSoundUI(true);
     $('#tableDays').textContent = `DAY ${pad(daysTogether(), 3)}`;

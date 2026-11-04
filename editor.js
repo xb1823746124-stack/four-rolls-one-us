@@ -192,9 +192,10 @@
     if (!token) return false;
     try {
       sessionStorage.setItem(GITHUB.sessionTokenKey, token);
+      localStorage.setItem(GITHUB.tokenKey, token);
       return true;
     } catch (err) {
-      return false;
+      try { sessionStorage.setItem(GITHUB.sessionTokenKey, token); return true; } catch (e) { return false; }
     }
   }
 
