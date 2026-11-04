@@ -47,12 +47,23 @@
   const clearTokenBtn = $('#clearTokenBtn');
   const introText = $('.intro');
   const editionLabel = $('.editor-title .mono');
+  const cropDialog = $('#cropDialog');
+  const cropStage = $('#cropStage');
+  const cropCanvas = $('#cropCanvas');
+  const cropZoom = $('#cropZoom');
+  const cropSlot = $('#cropSlot');
+  const cropConfirm = $('#cropConfirm');
+  const cropCancel = $('#cropCancel');
+  const cropClose = $('#cropClose');
+  const cropReset = $('#cropReset');
 
   let state = null;
   let pendingPhotos = {};
   let dirty = false;
   let busy = false;
   let githubToken = '';
+  let cropState = null;
+  let cropOpening = false;
 
   function setStatus(message, tone = '') {
     statusEl.textContent = message;
@@ -621,26 +632,196 @@
     return false;
   }
 
-  async function applyPhotoFile(slot, file, input) {
+  async function openCropDialog(slot, file, input) {
+    if (!cropDialog || cropDialog.open || cropOpening) {
+      setStatus('先把当前这张照片确认或取消。', '');
+      if (input) input.value = '';
+      return;
+    }
     if (!isImageFile(file) && !(await isTiffFile(file))) {
       setStatus('这不是图片文件。拖 JPG / PNG / WebP 进来，HEIC 先在相册导出 JPG。', 'error');
       if (input) input.value = '';
       return;
     }
+    cropOpening = true;
     const card = $(`[data-photo-card="${slot.id}"]`);
     card?.classList.add('is-loading');
-    setStatus('正在处理照片…');
+    setStatus('正在读取照片…');
     try {
-      const dataUrl = await fileToDataURL(file);
-      pendingPhotos[slot.id] = dataUrl;
-      $(`#preview-${slot.id}`).src = dataUrl;
-      dirty = true;
-      setStatus('照片已换，点保存草稿才会写入。', '');
+      const img = await loadImageForEditor(file);
+      const width = img.width || img.naturalWidth;
+      const height = img.height || img.naturalHeight;
+      if (!width || !height) throw new Error('image-size');
+      cropState = { slot, img, width, height, baseS: 1, s: 1, zoom: 1, ox: 0, oy: 0, drag: null };
+      cropSlot.textContent = `${slot.no} / ${slot.label}`;
+      cropZoom.value = '1';
+      cropStage.classList.remove('is-dragging');
+      cropDialog.showModal();
+      requestAnimationFrame(() => {
+        fitCrop();
+        cropConfirm.focus();
+      });
+      setStatus('调整好构图，点「用这张」确认。', '');
     } catch (err) {
+      cropState = null;
       setStatus('这张照片浏览器打不开。微信拖出来的 TIFF 也支持；如果还不行，先在微信里另存到桌面再拖。', 'error');
     } finally {
+      cropOpening = false;
       card?.classList.remove('is-loading');
       if (input) input.value = '';
+    }
+  }
+
+  function fitCrop() {
+    if (!cropState) return;
+    const W = cropStage.clientWidth;
+    const H = cropStage.clientHeight;
+    if (!W || !H) return;
+    const cover = Math.max(W / cropState.width, H / cropState.height);
+    cropState.baseS = cover;
+    cropState.s = cover;
+    cropState.zoom = 1;
+    cropState.ox = (W - cropState.width * cover) / 2;
+    cropState.oy = (H - cropState.height * cover) / 2;
+    cropZoom.value = '1';
+    clampCrop();
+    drawCrop();
+  }
+
+  function clampCrop() {
+    if (!cropState) return;
+    const W = cropStage.clientWidth;
+    const H = cropStage.clientHeight;
+    const dw = cropState.width * cropState.s;
+    const dh = cropState.height * cropState.s;
+    cropState.ox = dw <= W ? (W - dw) / 2 : Math.min(0, Math.max(W - dw, cropState.ox));
+    cropState.oy = dh <= H ? (H - dh) / 2 : Math.min(0, Math.max(H - dh, cropState.oy));
+  }
+
+  function drawCrop() {
+    if (!cropState || !cropCanvas) return;
+    const W = cropStage.clientWidth;
+    const H = cropStage.clientHeight;
+    if (!W || !H) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const pixelW = Math.round(W * dpr);
+    const pixelH = Math.round(H * dpr);
+    if (cropCanvas.width !== pixelW || cropCanvas.height !== pixelH) {
+      cropCanvas.width = pixelW;
+      cropCanvas.height = pixelH;
+    }
+    const context = cropCanvas.getContext('2d');
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.fillStyle = '#090303';
+    context.fillRect(0, 0, W, H);
+    context.drawImage(cropState.img, cropState.ox, cropState.oy, cropState.width * cropState.s, cropState.height * cropState.s);
+  }
+
+  function setCropZoom(value, anchorX, anchorY) {
+    if (!cropState) return;
+    const W = cropStage.clientWidth;
+    const H = cropStage.clientHeight;
+    if (!W || !H) return;
+    const nextZoom = Math.max(1, Math.min(4, Number(value) || 1));
+    const oldS = cropState.s;
+    if (!oldS) return;
+    const ax = anchorX === undefined ? W / 2 : anchorX;
+    const ay = anchorY === undefined ? H / 2 : anchorY;
+    const cx = (ax - cropState.ox) / oldS;
+    const cy = (ay - cropState.oy) / oldS;
+    cropState.s = cropState.baseS * nextZoom;
+    cropState.zoom = nextZoom;
+    cropState.ox = ax - cx * cropState.s;
+    cropState.oy = ay - cy * cropState.s;
+    cropZoom.value = String(nextZoom);
+    clampCrop();
+    drawCrop();
+  }
+
+  function cropSelection() {
+    const W = cropStage.clientWidth;
+    const H = cropStage.clientHeight;
+    const s = cropState.s;
+    const sw = Math.min(cropState.width, W / s);
+    const sh = Math.min(cropState.height, H / s);
+    const sx = Math.max(0, Math.min(cropState.width - sw, -cropState.ox / s));
+    const sy = Math.max(0, Math.min(cropState.height - sh, -cropState.oy / s));
+    return { sx, sy, sw, sh };
+  }
+
+  function cropToDataURL() {
+    const { sx, sy, sw, sh } = cropSelection();
+    const output = document.createElement('canvas');
+    output.width = 1600;
+    output.height = 1067;
+    const context = output.getContext('2d');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(cropState.img, sx, sy, sw, sh, 0, 0, output.width, output.height);
+    return output.toDataURL('image/jpeg', 0.9);
+  }
+
+  function closeCrop(confirmed) {
+    if (!cropState) return;
+    const slot = cropState.slot;
+    const dataUrl = confirmed ? cropToDataURL() : '';
+    cropState = null;
+    cropStage.classList.remove('is-dragging');
+    if (cropDialog.open) cropDialog.close();
+    if (confirmed && dataUrl) {
+      pendingPhotos[slot.id] = dataUrl;
+      const preview = $(`#preview-${slot.id}`);
+      if (preview) preview.src = dataUrl;
+      dirty = true;
+      setStatus('照片已换，点保存草稿才会写入。', '');
+    } else {
+      setStatus('没有改这张照片。', '');
+    }
+  }
+
+  function bindCropUI() {
+    if (!cropDialog) return;
+    cropDialog.addEventListener('cancel', event => {
+      event.preventDefault();
+      closeCrop(false);
+    });
+    cropClose?.addEventListener('click', () => closeCrop(false));
+    cropCancel?.addEventListener('click', () => closeCrop(false));
+    cropConfirm?.addEventListener('click', () => closeCrop(true));
+    cropReset?.addEventListener('click', fitCrop);
+    cropZoom?.addEventListener('input', () => setCropZoom(cropZoom.value));
+    cropStage?.addEventListener('pointerdown', event => {
+      if (!cropState || (event.button !== undefined && event.button !== 0)) return;
+      event.preventDefault();
+      try { cropStage.setPointerCapture(event.pointerId); } catch (err) { /* ignore */ }
+      cropState.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, ox: cropState.ox, oy: cropState.oy };
+      cropStage.classList.add('is-dragging');
+    });
+    cropStage?.addEventListener('pointermove', event => {
+      const drag = cropState?.drag;
+      if (!drag || drag.id !== event.pointerId) return;
+      cropState.ox = drag.ox + (event.clientX - drag.x);
+      cropState.oy = drag.oy + (event.clientY - drag.y);
+      clampCrop();
+      drawCrop();
+    });
+    const endDrag = event => {
+      if (!cropState?.drag) return;
+      cropState.drag = null;
+      cropStage.classList.remove('is-dragging');
+    };
+    cropStage?.addEventListener('pointerup', endDrag);
+    cropStage?.addEventListener('pointercancel', endDrag);
+    cropStage?.addEventListener('wheel', event => {
+      if (!cropState) return;
+      event.preventDefault();
+      const rect = cropStage.getBoundingClientRect();
+      setCropZoom(cropState.zoom - event.deltaY * 0.0016, event.clientX - rect.left, event.clientY - rect.top);
+    }, { passive: false });
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(() => {
+        if (cropState && cropDialog.open) fitCrop();
+      }).observe(cropStage);
     }
   }
 
@@ -681,16 +862,17 @@
         setStatus('这里没有可用的图片。拖 JPG / PNG / WebP 进来。', 'error');
         return;
       }
-      applyPhotoFile(slot, image);
+      openCropDialog(slot, image);
     });
   }
 
   function bind() {
+    bindCropUI();
     PHOTO_SLOTS.forEach(slot => {
       const input = $(`#file-${slot.id}`);
       input.addEventListener('change', () => {
         const file = input.files?.[0];
-        if (file) applyPhotoFile(slot, file, input);
+        if (file) openCropDialog(slot, file, input);
       });
       bindPhotoDrop(slot);
     });
@@ -717,7 +899,7 @@
     });
 
     $$('input, textarea').forEach(el => {
-      if (el.type === 'file') return;
+      if (el.type === 'file' || el.id === 'cropZoom') return;
       el.addEventListener('input', markDirty);
       el.addEventListener('change', markDirty);
     });

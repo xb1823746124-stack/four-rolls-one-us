@@ -7,7 +7,7 @@
 <title>布置四卷｜给婷婷</title>
 <meta name="theme-color" content="#2a0709">
 <link rel="preload" href="assets/fonts/NotoSerifSC-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="editor.css?v=20261104c">
+<link rel="stylesheet" href="editor.css?v=20261104d">
 </head>
 <body>
 <header class="editor-header">
@@ -48,7 +48,7 @@
 
   <section class="panel">
     <div class="panel-head"><span class="mono">02 / PHOTOGRAPHS</span><h2>照片</h2></div>
-    <p class="hint">横向 3:2 最好，浏览器会自动居中裁切。JPG / PNG / WebP，以及微信里直接拖出来的 TIFF，都可以拖进对应格子里；也可以点「换照片」选图。iPhone 的 HEIC 先在相册导出 JPG。只换不保存不会生效。</p>
+    <p class="hint">拖进或选中照片后，会先弹出确认和裁切；拖照片调整位置、拉滑块缩放，确认后才写入。JPG / PNG / WebP 和微信拖出的 TIFF 都可以；iPhone 的 HEIC 先在相册导出 JPG。</p>
     <div class="photo-grid" id="photoGrid"></div>
   </section>
 
@@ -88,6 +88,27 @@
   <p class="save-note" id="saveNote">照片和文字只写进这台电脑的项目文件；发布后才会出现在公网。</p>
 </main>
 
+<dialog class="crop-dialog" id="cropDialog" aria-labelledby="cropTitle">
+  <div class="crop-shell">
+    <header class="crop-head">
+      <span class="mono" id="cropSlot">PHOTO</span>
+      <button type="button" class="crop-close" id="cropClose" aria-label="关闭">×</button>
+    </header>
+    <h2 id="cropTitle">确认这张照片</h2>
+    <p class="hint">拖动照片调整位置，拉滑块缩放；中间画框就是最终裁切范围，比例固定 3:2。</p>
+    <div class="crop-stage" id="cropStage"><canvas id="cropCanvas"></canvas></div>
+    <div class="crop-tools">
+      <span class="mono">ZOOM</span>
+      <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" aria-label="缩放照片">
+      <button type="button" class="button button--ghost" id="cropReset">居中</button>
+    </div>
+    <div class="crop-actions">
+      <button type="button" class="button button--ghost" id="cropCancel">取消</button>
+      <button type="button" class="button button--save" id="cropConfirm">用这张</button>
+    </div>
+  </div>
+</dialog>
+
 <footer class="editor-actions">
   <div class="action-status" id="status" role="status" aria-live="polite">正在读取当前内容…</div>
   <div class="action-buttons">
@@ -99,6 +120,6 @@
 
 <script src="vendor/pako.min.js"></script>
 <script src="vendor/UTIF.js"></script>
-<script src="editor.js?v=20261104c"></script>
+<script src="editor.js?v=20261104d"></script>
 </body>
 </html>
