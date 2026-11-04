@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>布置四卷｜给婷婷</title>
+<meta name="theme-color" content="#2a0709">
+<link rel="preload" href="assets/fonts/NotoSerifSC-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<header class="editor-header">
+  <a class="back-link" href="/">← 回到四卷</a>
+  <div class="editor-title">
+    <span class="mono">EDIT THE REEL / 只在本地</span>
+    <h1>布置四卷</h1>
+  </div>
+  <div class="header-links">
+    <button type="button" class="text-button" id="previewBtn">预览本地</button>
+    <a class="text-button" id="publicLink" href="https://xb1823746124-stack.github.io/four-rolls-one-us/" target="_blank" rel="noreferrer">看公网 ↗</a>
+  </div>
+</header>
+
+<main class="editor-wrap">
+  <p class="intro">这里改的是本机的源文件；改完点「发布到公网」，上面那个链接就会更新。公网页面本身不会暴露编辑入口。</p>
+
+  <section class="panel github-panel" id="githubPanel" hidden>
+    <div class="panel-head"><span class="mono">00 / GITHUB</span><h2>连接你的 Git</h2></div>
+    <p class="hint">公网编辑器不经过我这台电脑：它用你自己的 GitHub token 直接提交到这个仓库。token 只存在当前浏览器，不会写进网页。</p>
+    <div class="github-grid">
+      <label class="field"><span>GitHub token</span><input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+      <button type="button" class="button button--save" id="saveTokenBtn">保存 token 到浏览器</button>
+      <button type="button" class="button button--ghost" id="clearTokenBtn">清除</button>
+    </div>
+    <p class="github-help" id="githubStatus">还没有连接。生成一个只限这个仓库的 fine-grained token，权限只需要 Contents: Read and write。</p>
+    <p class="hint">GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → 只选 <b>xb1823746124-stack/four-rolls-one-us</b> → Repository permissions → <b>Contents: Read and write</b>。</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">01 / BASICS</span><h2>基本</h2></div>
+    <div class="field-grid">
+      <label class="field"><span>她的称呼</span><input id="fieldName" type="text" autocomplete="off"></label>
+      <label class="field"><span>在一起的第一天</span><input id="fieldStartDate" type="date"></label>
+      <label class="field field--wide"><span>桌面大标题</span><input id="fieldTitle" type="text" autocomplete="off"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">02 / PHOTOGRAPHS</span><h2>照片</h2></div>
+    <p class="hint">横向 3:2 最好，浏览器会自动居中裁切。JPG / PNG / WebP 直接选；iPhone 的 HEIC 先在相册导出 JPG。点「换照片」选图；只选不保存不会生效。</p>
+    <div class="photo-grid" id="photoGrid"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">03 / CANISTERS</span><h2>四卷的名字</h2></div>
+    <div class="roll-table" id="rollTable"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">04 / FRAME COPY</span><h2>胶片里的字</h2></div>
+    <div class="field-grid">
+      <label class="field field--wide"><span>初见 · 文字格标题</span><input id="firstTitle" type="text"></label>
+      <label class="field field--wide"><span>初见 · 文字格正文</span><textarea id="firstBody" rows="3"></textarea></label>
+      <label class="field"><span>一封信 · 标题</span><input id="stillLetterTitle" type="text"></label>
+      <label class="field"><span>一封信 · 小字</span><input id="stillLetterCaption" type="text"></label>
+      <label class="field"><span>一封信 · 秋天照片说明</span><input id="stillCaption1" type="text"></label>
+      <label class="field"><span>一封信 · 夜灯照片说明</span><input id="stillCaption2" type="text"></label>
+      <label class="field field--wide"><span>一封信 · P.S. 那句</span><input id="stillPsTitle" type="text"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">05 / LETTER</span><h2>信</h2></div>
+    <div class="field-grid">
+      <label class="field"><span>开头</span><input id="letterGreeting" type="text"></label>
+      <label class="field field--wide"><span>正文 · 段落之间空一行</span><textarea id="letterParagraphs" rows="10"></textarea></label>
+      <label class="field field--wide"><span>P.S.</span><input id="letterPs" type="text"></label>
+      <label class="field"><span>署名</span><input id="letterSignature" type="text"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><span class="mono">06 / TOMORROW</span><h2>未来清单</h2></div>
+    <label class="field field--wide"><span>一行一件 · 加一行就多一格</span><textarea id="futurePlans" rows="9"></textarea></label>
+  </section>
+
+  <p class="save-note" id="saveNote">照片和文字只写进这台电脑的项目文件；发布后才会出现在公网。</p>
+</main>
+
+<footer class="editor-actions">
+  <div class="action-status" id="status" role="status" aria-live="polite">正在读取当前内容…</div>
+  <div class="action-buttons">
+    <button type="button" class="button button--ghost" id="reloadBtn">放弃修改</button>
+    <button type="button" class="button button--save" id="saveBtn">保存草稿</button>
+    <button type="button" class="button button--publish" id="publishBtn">发布到公网</button>
+  </div>
+</footer>
+
+<script src="editor.js"></script>
+</body>
+</html>
