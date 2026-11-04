@@ -184,13 +184,31 @@
     return loadImage(blob);
   }
 
+  async function loadLocalConvertedImage(file) {
+    const res = await fetch('http://127.0.0.1:4319/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file,
+      mode: 'cors',
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error(`local-convert-${res.status}`);
+    const blob = await res.blob();
+    if (!blob.size) throw new Error('local-convert-empty');
+    return loadImage(blob);
+  }
+
   async function loadImageForEditor(file) {
     try {
       return await loadImage(file);
     } catch (err) {
-      if (await isTiffFile(file)) return loadTiffImage(file);
-      if (await isHeicFile(file)) return loadHeicImage(file);
-      throw err;
+      if (await isTiffFile(file)) {
+        try { return await loadTiffImage(file); } catch (tiffErr) { /* try local */ }
+      }
+      if (await isHeicFile(file)) {
+        try { return await loadHeicImage(file); } catch (heicErr) { /* try local */ }
+      }
+      return loadLocalConvertedImage(file);
     }
   }
 
@@ -692,7 +710,7 @@
       setStatus('调整好构图，点「用这张」确认。', '');
     } catch (err) {
       cropState = null;
-      setStatus(`这张照片浏览器打不开（${fileInfo(file)}）。可以试试先在微信里另存到桌面再拖。`, 'error');
+      setStatus(`这张照片浏览器和本机转换都打不开（${fileInfo(file)}）。确认「连接编辑器」窗口还开着，或者先把图另存到桌面。`, 'error');
     } finally {
       cropOpening = false;
       card?.classList.remove('is-loading');
