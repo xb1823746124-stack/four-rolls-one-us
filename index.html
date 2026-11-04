@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>四卷，一个我们｜给婷婷</title>
+<meta name="description" content="给婷婷的四卷胶片：初见、日常、一封信、未曝光。拉出胶片，点一格冲洗。">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="四卷，一个我们｜给婷婷">
+  <meta property="og:description" content="挑一卷胶片，把它拉出来。点一格，冲洗一个属于我们的瞬间。">
+  <meta property="og:url" content="https://xb1823746124-stack.github.io/four-rolls-one-us/">
+  <meta property="og:image" content="https://xb1823746124-stack.github.io/four-rolls-one-us/assets/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2a0709">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%232a0709'/%3E%3Crect x='8' y='19' width='48' height='26' rx='4' fill='%23e7d2ac'/%3E%3Ccircle cx='17' cy='32' r='5' fill='%232a0709'/%3E%3Ccircle cx='47' cy='32' r='5' fill='%232a0709'/%3E%3Crect x='24' y='27' width='16' height='3' fill='%232a0709'/%3E%3Crect x='24' y='34' width='11' height='3' fill='%232a0709'/%3E%3C/svg%3E">
+<link rel="preload" href="assets/velvet.webp" as="image" type="image/webp">
+<link rel="preload" href="assets/images/hero.webp" as="image" type="image/webp">
+<link rel="stylesheet" href="four-rolls.css">
+</head>
+<body>
+<a class="skip-link" href="#tableTitle">跳到内容</a>
+<div class="grain" aria-hidden="true"></div>
+<div class="dust" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<main class="scene" id="scene">
+  <header class="scene-top" aria-hidden="true">
+    <span class="mono" id="sceneLabel">SCENE 01 — THE ROLLS</span>
+    <span class="mono" id="sceneCount">4 ROLLS / 21 FRAMES</span>
+  </header>
+
+  <section class="table-view" id="tableView" aria-labelledby="tableTitle">
+    <div class="table-head">
+      <h1 class="table-title" id="tableTitle">四卷，<br>一个我们</h1>
+      <p class="table-en">Four rolls, one us</p>
+      <p class="table-for"><span>for</span> <b id="tableForName">婷婷</b> <i>·</i> <span id="tableSince">2026.09.26</span></p>
+      <p class="table-sub">有些日子，卷起来收好，等以后再一起冲洗。<br><span>Some seasons we kept, wound up and waiting.</span></p>
+    </div>
+
+    <div class="canister-field" id="canisterField" role="group" aria-label="四卷胶片"></div>
+
+    <div class="table-pick">
+      <span class="pick-line" aria-hidden="true"></span>
+      <span class="pick-hand" aria-hidden="true">pick one</span>
+      <span class="pick-cn">选一卷</span>
+    </div>
+
+    <footer class="table-foot">
+      <span class="foot-meta"><span class="mono" id="tableDate">26 SEP 2026</span><span class="mono" id="tableDays">DAY 038</span></span>
+      <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="true" aria-label="关闭环境声">
+        <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span id="soundLabel">SOUND ON</span>
+      </button>
+      <span class="mono">TINGTING &amp; ME</span>
+    </footer>
+  </section>
+
+  <section class="roll-view" id="rollView" hidden aria-labelledby="rollTitle">
+    <header class="roll-head">
+      <button class="back-btn" id="backBtn" type="button"><span aria-hidden="true">←</span> back to the table <em>回到桌面</em></button>
+      <h2 class="roll-title" id="rollTitle"><span class="mono" id="rollNo">ROLL 01</span><em id="rollName">first day</em></h2>
+      <button class="sound-toggle roll-sound" id="rollSound" type="button" aria-pressed="true" aria-label="关闭环境声">
+        <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span id="rollSoundLabel">SOUND ON</span>
+      </button>
+    </header>
+
+    <div class="roll-stage" id="rollStage">
+      <div class="standing-canister" id="standingCanister" aria-hidden="true"></div>
+      <div class="strip-area" id="stripArea" style="--open:0">
+        <div class="strip-clip" id="stripClip">
+          <div class="strip-scroll" id="stripScroll">
+            <div class="film-strip" id="filmStrip"></div>
+          </div>
+        </div>
+        <span class="strip-edge" aria-hidden="true"></span>
+        <span class="strip-glint" aria-hidden="true"></span>
+        <button class="pull-handle" id="pullHandle" type="button" aria-controls="stripClip" aria-expanded="false" aria-label="拉开这卷胶片">
+          <span class="pull-tag">PULL</span>
+          <span class="pull-bead" aria-hidden="true"></span>
+        </button>
+        <p class="strip-hint" id="stripHint">拖动拉索，把胶片拉出来 <span>drag to pull</span></p>
+      </div>
+    </div>
+
+    <p class="roll-line" id="rollLine">where it started</p>
+  </section>
+</main>
+
+<dialog class="photo-dialog" id="photoDialog" aria-label="照片查看器" aria-describedby="photoCaption photoCount">
+  <button class="dialog-close" type="button" id="photoClose" aria-label="关闭">×</button>
+  <div class="photo-shell">
+    <div class="photo-film">
+      <div class="photo-window"><img id="photoImage" src="assets/images/hero.webp" alt=""></div>
+    </div>
+    <p class="sr-only" id="photoLive" aria-live="polite"></p>
+    <div class="photo-meta">
+      <div><p class="mono" id="photoFrame">FRAME 001</p><p class="photo-caption" id="photoCaption"></p></div>
+      <div class="photo-nav">
+        <button type="button" id="photoPrev" aria-label="上一张">←</button>
+        <span class="mono" id="photoCount">01 / 03</span>
+        <button type="button" id="photoNext" aria-label="下一张">→</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="letter-dialog" id="letterDialog" aria-labelledby="letterHeading">
+  <button class="dialog-close" type="button" id="letterClose" aria-label="关闭">×</button>
+  <div class="letter-shell">
+    <article class="letter-paper">
+      <header class="letter-head">
+        <span class="mono">TO: 婷婷</span>
+        <span class="mono">ROLL 03 / STILL US</span>
+        <span class="mono">FROM: 我</span>
+      </header>
+      <h2 id="letterHeading" class="letter-greeting">婷婷：</h2>
+      <div class="letter-body" id="letterBody"></div>
+      <p class="letter-sign">—— 我</p>
+      <p class="letter-ps"><span class="mono">P.S.</span> 下一格，想拍你笑的样子。</p>
+      <div class="letter-seal" aria-hidden="true"><span>第</span><strong id="letterDays">038</strong><span>天</span><i>SEALED</i></div>
+    </article>
+  </div>
+</dialog>
+
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<p class="sr-only" id="liveStatus" aria-live="polite"></p>
+<noscript><div class="no-js">这四卷胶片需要 JavaScript 才能冲洗。</div></noscript>
+
+<script src="data.js"></script>
+<script src="four-rolls-data.js"></script>
+<script src="four-rolls.js"></script>
+</body>
+</html>
