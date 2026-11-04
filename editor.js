@@ -206,6 +206,10 @@
     if (sessionToken) setGithubStatus('已通过本机连接助手接上，只在这个标签页有效。关掉标签页后重新打开连接页即可。', 'ok');
     else if (githubToken) setGithubStatus('已保存一个 GitHub token（只在这台设备的浏览器里）。发布时会用它提交。', 'ok');
     else setGithubStatus('还没有连接。生成一个只限这个仓库的 fine-grained token，权限只需要 Contents: Read and write。');
+    if (githubToken) {
+      if (githubPanel) githubPanel.hidden = true;
+      if (editionLabel) editionLabel.textContent = 'GITHUB EDITION / 已连接';
+    }
   }
 
   function applyPendingPreviews() {
@@ -536,6 +540,8 @@
       localStorage.setItem(GITHUB.tokenKey, value);
       githubTokenInput.value = '';
       setGithubStatus(`已连接 ${data.full_name}。token 只保存在这个浏览器里。`, 'ok');
+      if (githubPanel) githubPanel.hidden = true;
+      if (editionLabel) editionLabel.textContent = 'GITHUB EDITION / 已连接';
     } catch (err) {
       setGithubStatus('连接失败：' + (err.message || '检查 token 的仓库和 Contents 权限') + '。', 'error');
     }
