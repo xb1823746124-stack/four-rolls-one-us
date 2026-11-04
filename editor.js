@@ -89,8 +89,11 @@
         <div class="photo-preview"><img id="preview-${slot.id}" alt="" loading="lazy"></div>
         <div class="photo-meta">
           <strong>${slot.no} / ${slot.label}</strong>
-          <input class="photo-file" type="file" id="file-${slot.id}" data-photo-slot="${slot.id}" accept="image/jpeg,image/png,image/webp,image/avif,image/*">
-          <label class="photo-pick" for="file-${slot.id}">换照片</label>
+          <div class="photo-actions">
+            <button class="photo-paste" type="button" data-paste-slot="${slot.id}">粘贴</button>
+            <input class="photo-file" type="file" id="file-${slot.id}" data-photo-slot="${slot.id}" accept="image/jpeg,image/png,image/webp,image/avif,image/*">
+            <label class="photo-pick" for="file-${slot.id}">换照片</label>
+          </div>
         </div>
         <input class="photo-caption" id="caption-${slot.id}" type="text" placeholder="这一格的一句话">
       </figure>
@@ -871,6 +874,41 @@
     }
   }
 
+  async function readClipboardImage() {
+    if (!navigator.clipboard?.read) throw new Error('clipboard-unsupported');
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = (item.types || []).find(t => t.startsWith('image/'));
+      if (type) return item.getType(type);
+    }
+    return null;
+  }
+
+  async function pastePhoto(slot) {
+    if (cropDialog.open || cropOpening) {
+      setStatus('先把当前这张照片确认或取消。', '');
+      return;
+    }
+    setStatus('正在读取剪贴板…');
+    try {
+      const blob = await readClipboardImage();
+      if (!blob) {
+        setStatus('剪贴板里没有图片。先在微信图片上右键复制，再点这张的「粘贴」。', 'error');
+        return;
+      }
+      const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      const file = new File([blob], `clipboard.${ext}`, { type: blob.type || 'image/jpeg' });
+      await openCropDialog(slot, file);
+    } catch (err) {
+      setStatus('读不到剪贴板。请允许浏览器访问剪贴板，或直接点「换照片」选图。', 'error');
+    }
+  }
+
+  function bindPhotoPaste(slot) {
+    const button = document.querySelector(`[data-paste-slot="${slot.id}"]`);
+    button?.addEventListener('click', () => pastePhoto(slot));
+  }
+
   function bindPhotoDrop(slot) {
     const card = $(`[data-photo-card="${slot.id}"]`);
     if (!card) return;
@@ -921,6 +959,7 @@
         if (file) openCropDialog(slot, file, input);
       });
       bindPhotoDrop(slot);
+      bindPhotoPaste(slot);
     });
 
     // Keep a missed drop from navigating the browser to the image.
