@@ -556,24 +556,114 @@
     };
   }
 
+  function isImageFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|avif|gif)$/i.test(file.name || '');
+  }
+
+  function hasFileDrag(event) {
+    const types = event.dataTransfer?.types;
+    if (!types) return false;
+    for (let i = 0; i < types.length; i += 1) {
+      if (types[i] === 'Files') return true;
+    }
+    return false;
+  }
+
+  async function applyPhotoFile(slot, file, input) {
+    if (!isImageFile(file)) {
+      setStatus('这不是图片文件。拖 JPG / PNG / WebP 进来，HEIC 先在相册导出 JPG。', 'error');
+      if (input) input.value = '';
+      return;
+    }
+    const card = $(`[data-photo-card="${slot.id}"]`);
+    card?.classList.add('is-loading');
+    setStatus('正在处理照片…');
+    try {
+      const dataUrl = await fileToDataURL(file);
+      pendingPhotos[slot.id] = dataUrl;
+      $(`#preview-${slot.id}`).src = dataUrl;
+      dirty = true;
+      setStatus('照片已换，点保存草稿才会写入。', '');
+    } catch (err) {
+      setStatus('这张照片浏览器打不开，请换成 JPG / PNG，或先导成 JPG。', 'error');
+    } finally {
+      card?.classList.remove('is-loading');
+      if (input) input.value = '';
+    }
+  }
+
+  function bindPhotoDrop(slot) {
+    const card = $(`[data-photo-card="${slot.id}"]`);
+    if (!card) return;
+    let depth = 0;
+    card.addEventListener('dragenter', event => {
+      if (!hasFileDrag(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      depth += 1;
+      photoGrid.classList.remove('is-file-drag');
+      card.classList.add('is-dragover');
+    });
+    card.addEventListener('dragover', event => {
+      if (!hasFileDrag(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = 'copy';
+      card.classList.add('is-dragover');
+    });
+    card.addEventListener('dragleave', event => {
+      if (!hasFileDrag(event)) return;
+      depth = Math.max(0, depth - 1);
+      if (!depth) card.classList.remove('is-dragover');
+    });
+    card.addEventListener('drop', event => {
+      if (!hasFileDrag(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      depth = 0;
+      photoGrid.classList.remove('is-file-drag');
+      card.classList.remove('is-dragover');
+      const files = [...(event.dataTransfer?.files || [])];
+      const image = files.find(isImageFile);
+      if (!image) {
+        setStatus('这里没有可用的图片。拖 JPG / PNG / WebP 进来。', 'error');
+        return;
+      }
+      applyPhotoFile(slot, image);
+    });
+  }
+
   function bind() {
     PHOTO_SLOTS.forEach(slot => {
       const input = $(`#file-${slot.id}`);
-      input.addEventListener('change', async () => {
+      input.addEventListener('change', () => {
         const file = input.files?.[0];
-        if (!file) return;
-        setStatus('正在处理照片…');
-        try {
-          const dataUrl = await fileToDataURL(file);
-          pendingPhotos[slot.id] = dataUrl;
-          $(`#preview-${slot.id}`).src = dataUrl;
-          dirty = true;
-          setStatus('照片已换，点保存才会写入。', '');
-        } catch (err) {
-          setStatus('这张照片浏览器打不开，请换成 JPG / PNG，或先导成 JPG。', 'error');
-          input.value = '';
-        }
+        if (file) applyPhotoFile(slot, file, input);
       });
+      bindPhotoDrop(slot);
+    });
+
+    // Keep a missed drop from navigating the browser to the image.
+    document.addEventListener('dragenter', event => {
+      if (!hasFileDrag(event)) return;
+      photoGrid.classList.add('is-file-drag');
+    });
+    document.addEventListener('dragleave', event => {
+      if (!hasFileDrag(event)) return;
+      if (!event.relatedTarget) photoGrid.classList.remove('is-file-drag');
+    });
+    document.addEventListener('dragover', event => {
+      if (hasFileDrag(event)) event.preventDefault();
+    });
+    document.addEventListener('drop', event => {
+      if (!hasFileDrag(event)) return;
+      photoGrid.classList.remove('is-file-drag');
+      if (!event.target.closest('[data-photo-card]')) {
+        event.preventDefault();
+        setStatus('把照片拖到某一张的图里，或者点那张的「换照片」。', '');
+      }
     });
 
     $$('input, textarea').forEach(el => {
