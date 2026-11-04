@@ -387,33 +387,35 @@
     return data;
   }
 
-  async function commitGithub(files, message) {
-    const ref = await ghRequest('GET', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/ref/heads/${GITHUB.branch}`);
-    const headSha = ref.object.sha;
-    const parent = await ghRequest('GET', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/commits/${headSha}`);
-    const entries = [];
+  async function putGithubFiles(files, message) {
+    // One PUT per file. The Contents API reads the current sha immediately
+    // before writing, which avoids stale base-tree / fast-forward races.
     for (const file of files) {
+      const apiPath = file.path.split('/').map(encodeURIComponent).join('/');
+      const url = `${GITHUB.api}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${apiPath}`;
+      const getRes = await fetch(`${url}?ref=${encodeURIComponent(GITHUB.branch)}`, { headers: ghHeaders() });
+      let sha = null;
+      if (getRes.ok) {
+        const existing = await getRes.json();
+        sha = existing.sha;
+      } else if (getRes.status !== 404) {
+        const err = await getRes.json().catch(() => ({}));
+        throw new Error(err.message || `读取 ${file.path} 失败（${getRes.status}）`);
+      }
       const content = file.text !== undefined ? b64Utf8(file.text) : file.base64;
-      const blob = await ghRequest('POST', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/blobs`, {
-        content,
-        encoding: 'base64'
+      const body = { message, content, branch: GITHUB.branch };
+      if (sha) body.sha = sha;
+      const put = await fetch(url, {
+        method: 'PUT',
+        headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
       });
-      entries.push({ path: file.path, mode: '100644', type: 'blob', sha: blob.sha });
+      if (!put.ok) {
+        const err = await put.json().catch(() => ({}));
+        throw new Error(err.message || `写入 ${file.path} 失败（${put.status}）`);
+      }
     }
-    const tree = await ghRequest('POST', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/trees`, {
-      base_tree: parent.tree.sha,
-      tree: entries
-    });
-    const commit = await ghRequest('POST', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/commits`, {
-      message,
-      tree: tree.sha,
-      parents: [headSha]
-    });
-    await ghRequest('PATCH', `/repos/${GITHUB.owner}/${GITHUB.repo}/git/refs/heads/${GITHUB.branch}`, {
-      sha: commit.sha,
-      force: false
-    });
-    return commit.sha;
+    return true;
   }
 
   async function publishGithub() {
@@ -460,7 +462,7 @@
         }
       } catch (err) { /* index can stay; overrides filename is still fetched */ }
 
-      await commitGithub(files, `Update the four rolls — ${new Date().toISOString().slice(0, 16)}`);
+      await putGithubFiles(files, `Update the four rolls — ${new Date().toISOString().slice(0, 16)}`);
       state = nextState;
       pendingPhotos = {};
       localStorage.removeItem(GITHUB.draftKey);
