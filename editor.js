@@ -179,7 +179,24 @@
     }
   }
 
+  let heicScriptPromise = null;
+
+  function ensureHeic2Any() {
+    if (typeof window.heic2any === 'function') return Promise.resolve();
+    if (!heicScriptPromise) {
+      heicScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'vendor/heic2any.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('heic-decoder-load'));
+        document.head.appendChild(script);
+      });
+    }
+    return heicScriptPromise;
+  }
+
   async function loadHeicImage(file) {
+    await ensureHeic2Any();
     if (typeof window.heic2any !== 'function') throw new Error('heic-decoder-missing');
     const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
     const blob = Array.isArray(converted) ? converted[0] : converted;
