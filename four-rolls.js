@@ -16,8 +16,129 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const motionWait = reduceMotion ? 0 : 420;
 
+  applySiteOverrides();
+
   const totalFrames = ROLLS.reduce((sum, roll) => sum + roll.frames.length, 0);
   const EXPO_STORE = 'tingting-four-rolls:exposed:v1';
+
+  function applySiteOverrides() {
+    const O = window.SITE_OVERRIDES;
+    if (!O || O.version !== 1) return;
+
+    if (typeof O.name === 'string' && O.name.trim()) D.name = O.name.trim();
+    if (typeof O.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(O.startDate)) D.startDate = O.startDate;
+    const dateLabel = D.startDate.split('-').join('.');
+
+    const titleEl = $('#tableTitle');
+    if (titleEl && typeof O.title === 'string' && O.title.trim()) {
+      titleEl.innerHTML = O.title.trim() === '四卷，一个我们'
+        ? '四卷，<br>一个我们'
+        : escapeHTML(O.title.trim()).replace(/\n/g, '<br>');
+    }
+    document.title = O.title ? `${O.title}｜给${D.name}` : document.title;
+
+    const photos = O.photos || {};
+    if (photos.hero) {
+      D.hero.src = photos.hero.src || D.hero.src;
+      D.hero.alt = photos.hero.alt || D.hero.alt;
+    }
+    if (photos.origin) {
+      D.origin.src = photos.origin.src || D.origin.src;
+      D.origin.alt = photos.origin.alt || D.origin.alt;
+    }
+    D.contact.forEach(item => {
+      const p = photos[item.id];
+      if (!p) return;
+      item.src = p.src || item.src;
+      item.alt = p.alt || item.alt;
+      if (typeof p.caption === 'string') item.caption = p.caption;
+    });
+
+    if (O.letter) {
+      if (typeof O.letter.greeting === 'string') D.letter.greeting = O.letter.greeting;
+      if (Array.isArray(O.letter.paragraphs)) D.letter.paragraphs = O.letter.paragraphs.slice();
+      if (typeof O.letter.ps === 'string') D.letter.ps = O.letter.ps;
+      if (typeof O.letter.signature === 'string') D.letter.signature = O.letter.signature;
+      D.letter.to = `TO: ${D.name}`;
+    }
+    if (Array.isArray(O.future) && O.future.length) {
+      D.future.plans = O.future.map(plan => String(plan).trim()).filter(Boolean);
+    }
+
+    const byId = id => ROLLS.find(roll => roll.id === id);
+    const first = byId('first');
+    const slow = byId('slow');
+    const still = byId('still');
+    const tomorrow = byId('tomorrow');
+
+    if (O.rolls) {
+      ROLLS.forEach(roll => {
+        const labels = O.rolls[roll.id];
+        if (!labels) return;
+        if (typeof labels.label === 'string') roll.label = labels.label;
+        if (typeof labels.zh === 'string') roll.zh = labels.zh;
+        if (typeof labels.line === 'string') roll.line = labels.line;
+      });
+    }
+
+    if (first) {
+      first.meta = dateLabel;
+      first.frames[0].src = D.hero.src;
+      first.frames[0].alt = D.hero.alt;
+      first.frames[0].caption = photos.hero?.caption || first.frames[0].caption;
+      first.frames[1].src = D.origin.src;
+      first.frames[1].alt = D.origin.alt;
+      first.frames[1].caption = photos.origin?.caption || first.frames[1].caption;
+      first.frames[2].kicker = dateLabel;
+      if (O.firstText) {
+        if (typeof O.firstText.title === 'string') first.frames[2].title = O.firstText.title;
+        if (typeof O.firstText.body === 'string') first.frames[2].body = O.firstText.body;
+      }
+    }
+
+    if (slow) {
+      slow.frames.forEach((frame, index) => {
+        const item = D.contact[index];
+        if (!item) return;
+        frame.src = item.src;
+        frame.alt = item.alt;
+        frame.caption = item.caption;
+      });
+    }
+
+    if (still) {
+      const autumn = D.contact.find(item => item.id === 'autumn');
+      const bokeh = D.contact.find(item => item.id === 'bokeh');
+      if (O.still) {
+        if (typeof O.still.letterTitle === 'string') still.frames[0].title = O.still.letterTitle;
+        if (typeof O.still.letterCaption === 'string') still.frames[0].caption = O.still.letterCaption;
+        if (Array.isArray(O.still.photoCaptions)) {
+          if (typeof O.still.photoCaptions[0] === 'string') still.frames[1].caption = O.still.photoCaptions[0];
+          if (typeof O.still.photoCaptions[1] === 'string') still.frames[2].caption = O.still.photoCaptions[1];
+        }
+        if (typeof O.still.psTitle === 'string') still.frames[3].title = O.still.psTitle;
+      }
+      if (autumn) {
+        still.frames[1].src = autumn.src;
+        still.frames[1].alt = autumn.alt;
+      }
+      if (bokeh) {
+        still.frames[2].src = bokeh.src;
+        still.frames[2].alt = bokeh.alt;
+      }
+    }
+
+    if (tomorrow) {
+      const template = tomorrow.frames[0] || { kind: 'future', frame: '001', index: 0 };
+      tomorrow.frames = D.future.plans.map((plan, index) => ({
+        ...template,
+        kind: 'future',
+        frame: String(index + 1).padStart(3, '0'),
+        plan,
+        index
+      }));
+    }
+  }
 
   const tabelEl = $('#tableView');
   const rollEl = $('#rollView');
@@ -247,7 +368,7 @@
         el.className = 'film-frame frame--letter';
         el.innerHTML =
           `<span class="frame-number">FRAME ${escapeHTML(frame.frame)}</span>` +
-          '<span class="letter-frame-top"><span>TO: 婷婷</span><span>LETTER</span></span>' +
+          `<span class="letter-frame-top"><span>TO: ${escapeHTML(D.name)}</span><span>LETTER</span></span>` +
           `<span class="letter-frame-title">${escapeHTML(frame.title)}</span>` +
           `<span class="letter-frame-sub">${escapeHTML(frame.caption)}</span>` +
           '<span class="letter-frame-open">OPEN / 打开</span>';
@@ -802,6 +923,8 @@
   function openLetter(trigger) {
     lastLetterTrigger = trigger;
     const letter = D.letter;
+    $('#letterTo').textContent = `TO: ${D.name}`;
+    $('#letterFrom').textContent = letter.from || 'FROM: 我';
     $('#letterHeading').textContent = letter.greeting;
     $('#letterBody').innerHTML = letter.paragraphs.map(p => `<p>${escapeHTML(p)}</p>`).join('');
     if (!letterDialog.open) letterDialog.showModal();
@@ -1185,6 +1308,9 @@
     updateTopLabels();
     $('#tableForName').textContent = D.name;
     $('#tableSince').textContent = D.startDate.split('-').join('.');
+    const isLocal = ['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname);
+    const editLink = $('#editLink');
+    if (editLink && isLocal) editLink.hidden = false;
     setOpen(0, false);
     setSoundUI(true);
     $('#tableDays').textContent = `DAY ${pad(daysTogether(), 3)}`;
