@@ -4,6 +4,16 @@
   "startDate": "2026-09-26",
   "title": "四卷，一个我们",
   "photos": {
+    "bokeh": {
+      "src": "assets/images/daily-bokeh.webp",
+      "alt": "夜晚街道上失焦的灯光。",
+      "caption": "夜里回家的路，灯都变成了光斑。"
+    },
+    "autumn": {
+      "src": "assets/images/daily-autumn.webp",
+      "alt": "散落在桌面上的秋天落叶。",
+      "caption": "路边捡到的秋天。"
+    },
     "hero": {
       "src": "assets/images/hero.webp",
       "alt": "黄昏的海边，两个人并肩坐在长椅上，面前是安静的海。",
@@ -14,35 +24,25 @@
       "alt": "木屋里，午后的光从窗边斜斜落下。",
       "caption": "第一格，留给开始。"
     },
+    "cafe": {
+      "src": "assets/images/daily-cafe.webp",
+      "alt": "午后咖啡馆里空着的木桌。",
+      "caption": "什么都没做的一个下午。"
+    },
     "coffee": {
       "src": "assets/images/daily-coffee.webp",
       "alt": "红色桌面上的一杯热咖啡。",
-      "caption": "PUBLIC ROOT TEST"
+      "caption": "一杯热咖啡，和一个慢下来的早上。"
     },
     "vinyl": {
       "src": "assets/images/daily-vinyl.webp",
       "alt": "唱针落在黑胶唱片上。",
       "caption": "唱针落下，房间就有了旧时光的声音。"
     },
-    "autumn": {
-      "src": "assets/images/daily-autumn.webp",
-      "alt": "散落在桌面上的秋天落叶。",
-      "caption": "路边捡到的秋天。"
-    },
     "sea": {
       "src": "assets/images/daily-sea.webp",
       "alt": "悬崖之间的一片安静海面。",
       "caption": "想和你去看很多次海。"
-    },
-    "bokeh": {
-      "src": "assets/images/daily-bokeh.webp",
-      "alt": "夜晚街道上失焦的灯光。",
-      "caption": "夜里回家的路，灯都变成了光斑。"
-    },
-    "cafe": {
-      "src": "assets/images/daily-cafe.webp",
-      "alt": "午后咖啡馆里空着的木桌。",
-      "caption": "什么都没做的一个下午。"
     }
   },
   "rolls": {
