@@ -7,7 +7,7 @@
 <title>布置四卷｜给婷婷</title>
 <meta name="theme-color" content="#2a0709">
 <link rel="preload" href="assets/fonts/NotoSerifSC-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="editor.css?v=20261104d">
+<link rel="stylesheet" href="editor.css?v=20261104e">
 </head>
 <body>
 <header class="editor-header">
@@ -48,7 +48,7 @@
 
   <section class="panel">
     <div class="panel-head"><span class="mono">02 / PHOTOGRAPHS</span><h2>照片</h2></div>
-    <p class="hint">拖进或选中照片后，会先弹出确认和裁切；拖照片调整位置、拉滑块缩放，确认后才写入。JPG / PNG / WebP 和微信拖出的 TIFF 都可以；iPhone 的 HEIC 先在相册导出 JPG。</p>
+    <p class="hint">拖进或选中照片后，会先弹出确认和裁切；拖照片调整位置、拉滑块缩放，确认后才写入。JPG / PNG / WebP、微信拖出的 TIFF，以及 iPhone 的 HEIC 都可以。</p>
     <div class="photo-grid" id="photoGrid"></div>
   </section>
 
@@ -120,6 +120,7 @@
 
 <script src="vendor/pako.min.js"></script>
 <script src="vendor/UTIF.js"></script>
-<script src="editor.js?v=20261104d"></script>
+<script src="vendor/heic2any.min.js"></script>
+<script src="editor.js?v=20261104e"></script>
 </body>
 </html>

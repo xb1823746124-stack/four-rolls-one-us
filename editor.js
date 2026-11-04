@@ -164,12 +164,33 @@
     return canvas;
   }
 
+  async function isHeicFile(file) {
+    if (/^image\/(heic|heif)$/i.test(file.type || '') || /\.(heic|heif)$/i.test(file.name || '')) return true;
+    try {
+      const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+      if (head[4] !== 0x66 || head[5] !== 0x74 || head[6] !== 0x79 || head[7] !== 0x70) return false;
+      const brand = String.fromCharCode(head[8], head[9], head[10], head[11]).toLowerCase();
+      return ['heic', 'heix', 'hevc', 'hevx', 'mif1', 'msf1'].includes(brand);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async function loadHeicImage(file) {
+    if (typeof window.heic2any !== 'function') throw new Error('heic-decoder-missing');
+    const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+    const blob = Array.isArray(converted) ? converted[0] : converted;
+    if (!blob) throw new Error('heic-empty');
+    return loadImage(blob);
+  }
+
   async function loadImageForEditor(file) {
     try {
       return await loadImage(file);
     } catch (err) {
-      if (!(await isTiffFile(file))) throw err;
-      return loadTiffImage(file);
+      if (await isTiffFile(file)) return loadTiffImage(file);
+      if (await isHeicFile(file)) return loadHeicImage(file);
+      throw err;
     }
   }
 
@@ -623,6 +644,13 @@
     return !file.type && !/\.[a-z0-9]{2,5}$/i.test(file.name || '');
   }
 
+  function fileInfo(file) {
+    const name = file.name || '(无文件名)';
+    const type = file.type || '未知类型';
+    const size = file.size ? `${Math.round(file.size / 1024)} KB` : '0 KB';
+    return `${name} · ${type} · ${size}`;
+  }
+
   function hasFileDrag(event) {
     const types = event.dataTransfer?.types;
     if (!types) return false;
@@ -664,7 +692,7 @@
       setStatus('调整好构图，点「用这张」确认。', '');
     } catch (err) {
       cropState = null;
-      setStatus('这张照片浏览器打不开。微信拖出来的 TIFF 也支持；如果还不行，先在微信里另存到桌面再拖。', 'error');
+      setStatus(`这张照片浏览器打不开（${fileInfo(file)}）。可以试试先在微信里另存到桌面再拖。`, 'error');
     } finally {
       cropOpening = false;
       card?.classList.remove('is-loading');
