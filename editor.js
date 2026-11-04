@@ -114,8 +114,56 @@
     });
   }
 
+  async function isTiffFile(file) {
+    if (/^image\/tiff?$/i.test(file.type || '') || /\.tiff?$/i.test(file.name || '')) return true;
+    try {
+      const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      return (head[0] === 0x49 && head[1] === 0x49 && head[2] === 0x2A && head[3] === 0x00)
+        || (head[0] === 0x4D && head[1] === 0x4D && head[2] === 0x00 && head[3] === 0x2A);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async function loadTiffImage(file) {
+    if (!window.UTIF) throw new Error('tiff-decoder-missing');
+    const buffer = await file.arrayBuffer();
+    const pages = window.UTIF.decode(buffer);
+    if (!pages || !pages.length) throw new Error('tiff-empty');
+    // WeChat can hand over a TIFF with a thumbnail first; use the largest page.
+    let page = pages[0];
+    if (pages.length > 1) {
+      page = pages.reduce((best, item) => {
+        const area = (item.width || 0) * (item.height || 0);
+        const bestArea = (best.width || 0) * (best.height || 0);
+        return area > bestArea ? item : best;
+      }, pages[0]);
+    }
+    window.UTIF.decodeImage(buffer, page);
+    const rgba = window.UTIF.toRGBA8(page);
+    const width = page.width;
+    const height = page.height;
+    if (!width || !height || !rgba || !rgba.length) throw new Error('tiff-size');
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    const data = new Uint8ClampedArray(rgba);
+    context.putImageData(new ImageData(data, width, height), 0, 0);
+    return canvas;
+  }
+
+  async function loadImageForEditor(file) {
+    try {
+      return await loadImage(file);
+    } catch (err) {
+      if (!(await isTiffFile(file))) throw err;
+      return loadTiffImage(file);
+    }
+  }
+
   async function fileToDataURL(file) {
-    const img = await loadImage(file);
+    const img = await loadImageForEditor(file);
     const w = img.width || img.naturalWidth;
     const h = img.height || img.naturalHeight;
     if (!w || !h) throw new Error('image-size');
@@ -559,7 +607,9 @@
   function isImageFile(file) {
     if (!file) return false;
     if (file.type && file.type.startsWith('image/')) return true;
-    return /\.(jpe?g|png|webp|avif|gif)$/i.test(file.name || '');
+    if (/\.(jpe?g|png|webp|avif|gif|tiff?)$/i.test(file.name || '')) return true;
+    // WeChat's drag sometimes hands over an extension-less / typeless temp image.
+    return !file.type && !/\.[a-z0-9]{2,5}$/i.test(file.name || '');
   }
 
   function hasFileDrag(event) {
@@ -572,7 +622,7 @@
   }
 
   async function applyPhotoFile(slot, file, input) {
-    if (!isImageFile(file)) {
+    if (!isImageFile(file) && !(await isTiffFile(file))) {
       setStatus('这不是图片文件。拖 JPG / PNG / WebP 进来，HEIC 先在相册导出 JPG。', 'error');
       if (input) input.value = '';
       return;
@@ -587,7 +637,7 @@
       dirty = true;
       setStatus('照片已换，点保存草稿才会写入。', '');
     } catch (err) {
-      setStatus('这张照片浏览器打不开，请换成 JPG / PNG，或先导成 JPG。', 'error');
+      setStatus('这张照片浏览器打不开。微信拖出来的 TIFF 也支持；如果还不行，先在微信里另存到桌面再拖。', 'error');
     } finally {
       card?.classList.remove('is-loading');
       if (input) input.value = '';
